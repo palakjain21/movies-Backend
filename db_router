@@ -1,0 +1,18 @@
+const express = require("express");
+const {
+  getDatabaseSchema,
+  getMovies,
+  addMovie,
+  updateMovie,
+  deleteMovie,
+} = require("./db_controller");
+
+const router = express.Router();
+
+router.get("/get-schema", getDatabaseSchema);
+router.post("/get-movies", getMovies);
+router.post("/add-movie", addMovie);
+router.patch("/update-movie", updateMovie);
+router.post("/delete-movie", deleteMovie);
+
+module.exports = router;

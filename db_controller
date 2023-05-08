@@ -1,0 +1,191 @@
+const express = require("express");
+const { Client } = require("@notionhq/client");
+
+const notion = new Client({
+  auth: "secret_BJAWekAPIOMfXPd1TzImGLBjjaCdsaxqWrcaryEEeAP",
+});
+
+const getDatabaseSchema = async (req, res) => {
+  const database_id = "737ac0f9817047ad81f11c543185e547";
+  const response = await notion.databases.retrieve({
+    database_id,
+  });
+  console.log(response);
+  res.json(response);
+};
+const getMovies = async (req, res) => {
+  const filterMapper = (filter) => {
+    switch (filter) {
+      case "watched":
+        return {
+          property: "Watched",
+          checkbox: {
+            equals: true,
+          },
+        };
+      case "notWatched":
+        return {
+          property: "Watched",
+          checkbox: {
+            equals: false,
+          },
+        };
+      default:
+        return undefined;
+    }
+  };
+  const pageToMovieMapper = (page) => {
+    if ("properties" in page) {
+      return {
+        id: page.id,
+        title: page.properties.Title,
+        ratings: page.properties.Ratings,
+        isWatched: page.properties.Watched,
+        watchedDate: page.properties.WatchedDate,
+        comment: page.properties.Comment,
+      };
+    }
+  };
+  try {
+    // const database_id = env.DATABASE_ID as string;
+    const database_id = "737ac0f9817047ad81f11c543185e547";
+
+    const { filter } = req.body;
+    const filterProperty = filterMapper(filter);
+    const response = await notion.databases.query({
+      database_id,
+      filter: filterProperty,
+    });
+    let responseBody = response.results.map((page) => {
+      return pageToMovieMapper(page);
+    });
+    console.log(responseBody);
+    res.json(responseBody);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const addMovie = async (req, res) => {
+  try {
+    // const database_id = env.DATABASE_ID as string;
+    const database_id = "737ac0f9817047ad81f11c543185e547";
+
+    console.log(req.body);
+
+    const { data } = req.body;
+
+    const response = await notion.pages.create({
+      parent: { database_id },
+      properties: {
+        Title: {
+          title: [
+            {
+              text: {
+                content: data.title,
+              },
+            },
+          ],
+        },
+        Watched: {
+          checkbox: data.isWatched,
+        },
+        WatchedDate: {
+          date: {
+            start: data.watchedDate,
+            end: null,
+          },
+        },
+        Comment: {
+          rich_text: [
+            {
+              text: {
+                content: data.comment,
+              },
+            },
+          ],
+        },
+        Ratings: {
+          select: {
+            name: data.ratings.toString(),
+          },
+        },
+      },
+    });
+
+    res.json(response);
+  } catch (error) {
+    console.log(error);
+    res.json(error);
+  }
+};
+
+const updateMovie = async (req, res) => {
+  try {
+    // const database_id = env.DATABASE_ID as string;
+    const database_id = "737ac0f9817047ad81f11c543185e547";
+
+    const { movie } = req.body;
+    const response = await notion.pages.update({
+      page_id: movie.id,
+      properties: {
+        Title: {
+          title: [
+            {
+              text: {
+                content: data.title,
+              },
+            },
+          ],
+        },
+        Watched: {
+          checkbox: data.isWatched,
+        },
+        WatchedDate: {
+          date: {
+            start: data.watchedDate,
+            end: null,
+          },
+        },
+        Comment: {
+          rich_text: [
+            {
+              text: {
+                content: data.comment,
+              },
+            },
+          ],
+        },
+      },
+    });
+    console.log(response);
+    res.json(response);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const deleteMovie = async (req, res) => {
+  try {
+    // const database_id = env.DATABASE_ID as string;
+    const database_id = "737ac0f9817047ad81f11c543185e547";
+    const { movieId } = req.body;
+    console.log(movieId);
+    const response = await notion.blocks.delete({
+      block_id: movieId,
+      archived: true,
+    });
+    console.log(response);
+    res.json(response);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+module.exports = {
+  addMovie,
+  getDatabaseSchema,
+  getMovies,
+  updateMovie,
+  deleteMovie,
+};
